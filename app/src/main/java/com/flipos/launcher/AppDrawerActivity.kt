@@ -100,11 +100,8 @@ class AppDrawerActivity : AppCompatActivity() {
         )
         grid.itemAnimator = null
 
-        softKeys.setLabels(
-            getString(R.string.softkey_back),
-            getString(R.string.softkey_open),
-            getString(R.string.softkey_options),
-        )
+        softKeys.setLabels(null, null, getString(R.string.softkey_options))
+        softKeys.setCenterPlainLabel(getString(R.string.softkey_select).uppercase())
         softKeys.setOnLeftClick { finish() }
         softKeys.setOnCenterClick { openFocused() }
         softKeys.setOnRightClick { optionsForFocused() }
@@ -284,8 +281,12 @@ class AppDrawerActivity : AppCompatActivity() {
         )
         items.add(ContextItem(getString(R.string.ctx_uninstall)) { uninstallApp(app) })
 
+        val titleView = layoutInflater.inflate(R.layout.dialog_app_context_title, null).apply {
+            findViewById<TextView>(R.id.dialog_title_label).text = app.label
+            findViewById<TextView>(R.id.dialog_title_package).text = app.packageName
+        }
         AlertDialog.Builder(this)
-            .setTitle(app.label)
+            .setCustomTitle(titleView)
             .setItems(items.map { it.label }.toTypedArray()) { _, which -> items[which].action() }
             .show()
     }

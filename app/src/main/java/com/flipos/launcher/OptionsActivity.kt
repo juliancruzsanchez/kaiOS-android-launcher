@@ -48,7 +48,7 @@ class OptionsActivity : BaseListActivity() {
             Option(getString(R.string.opt_customize_shortcuts)) { open(ShortcutConfigActivity::class.java) },
             Option(getString(R.string.opt_hide_apps)) { open(HideAppsActivity::class.java) },
             Option(getString(R.string.opt_back_longpress)) { configureBackLongPress() },
-            Option(getString(R.string.opt_set_wallpaper)) { setWallpaper() },
+            Option(getString(R.string.opt_set_wallpaper)) { open(WallpaperPickerActivity::class.java) },
             Option(getString(R.string.opt_default_launcher)) { startSafely(Intent(Settings.ACTION_HOME_SETTINGS)) },
             Option(getString(R.string.opt_system_settings)) { startSafely(Intent(Settings.ACTION_SETTINGS)) },
         )
@@ -101,9 +101,6 @@ class OptionsActivity : BaseListActivity() {
             ?: getString(R.string.back_longpress_not_set)
         adapter.updateRow(backLongPressRow, Row(title = options[backLongPressRow].title, trailing = label))
     }
-
-    private fun setWallpaper() =
-        startSafely(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), getString(R.string.opt_set_wallpaper)))
 
     private fun startSafely(intent: Intent) {
         try {

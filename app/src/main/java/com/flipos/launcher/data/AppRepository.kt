@@ -114,17 +114,31 @@ object AppRepository {
     }
 
     private fun rawIcon(context: Context, prefs: LauncherPrefs, componentKey: String, fallback: Drawable): Drawable {
-        prefs.getIconOverride(componentKey)?.let { (pack, name) ->
-            val override = if (pack == BuiltInIcons.PACK_ID) {
+        val override = prefs.getIconOverride(componentKey) ?: packageIconOverride(context, prefs, componentKey)
+        override?.let { (pack, name) ->
+            val drawable = if (pack == BuiltInIcons.PACK_ID) {
                 BuiltInIcons.loadIcon(context, name)
             } else {
                 IconPackRepository.loadIcon(context, pack, name)
             }
-            override?.let { return it }
+            drawable?.let { return it }
         }
         val activePack = prefs.getActiveIconPack() ?: return fallback
         val name = IconPackRepository.iconNameFor(context, activePack, componentKey) ?: return fallback
         return IconPackRepository.loadIcon(context, activePack, name) ?: fallback
+    }
+
+    /**
+     * Falls back to the icon override set on the app's main entry point, so an
+     * activity picked via [ActivityPickerActivity] (a deep screen, not the app's
+     * main icon) still picks up a custom icon when used as a Home shortcut.
+     */
+    private fun packageIconOverride(context: Context, prefs: LauncherPrefs, componentKey: String): Pair<String, String>? {
+        val packageName = ComponentName.unflattenFromString(componentKey)?.packageName ?: return null
+        val mainKey = context.packageManager.getLaunchIntentForPackage(packageName)?.component?.flattenToString()
+            ?: return null
+        if (mainKey == componentKey) return null
+        return prefs.getIconOverride(mainKey)
     }
 
     /**

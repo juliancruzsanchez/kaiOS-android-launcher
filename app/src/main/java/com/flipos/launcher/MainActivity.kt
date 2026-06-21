@@ -17,6 +17,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.data.AppRepository
@@ -112,6 +113,12 @@ class MainActivity : AppCompatActivity() {
         rail.layoutManager = LinearLayoutManager(this)
         rail.adapter = adapter
         rail.itemAnimator = null
+        // Slot height is computed from the rail's actual height so 5 shortcuts are
+        // always visible without scrolling, regardless of screen size/aspect ratio.
+        rail.doOnLayout {
+            val available = it.height - it.paddingTop - it.paddingBottom
+            adapter.setItemHeightPx(available / HomeRailAdapter.SLOTS_VISIBLE)
+        }
 
         findViewById<TextView>(R.id.softkey_left).setOnClickListener { openNotifications() }
         findViewById<TextView>(R.id.softkey_right).setOnClickListener { openRightKeyApp() }

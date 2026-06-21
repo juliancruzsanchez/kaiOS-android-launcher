@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Needed for WallpaperManager.setBitmap() in the bundled Wallpaper Picker. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
     <!--
       A launcher only needs to see launchable activities and the dialer.
       Using a <queries> block keeps us off the sensitive QUERY_ALL_PACKAGES
@@ -103,6 +106,12 @@
 
         <activity
             android:name=".IconPickerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboardHidden|keyboard|navigation|orientation|screenSize" />
+
+        <activity
+            android:name=".WallpaperPickerActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:configChanges="keyboardHidden|keyboard|navigation|orientation|screenSize" />

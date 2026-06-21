@@ -25,9 +25,19 @@ class HomeRailAdapter(
 
     private val items = ArrayList<RailItem>()
 
+    /** Slot height in px so exactly [SLOTS_VISIBLE] rows fit the rail without scrolling. */
+    private var itemHeightPx = -1
+
     fun submit(list: List<RailItem>) {
         items.clear()
         items.addAll(list)
+        notifyDataSetChanged()
+    }
+
+    /** Pins every row to this height; pass -1 to fall back to wrap_content. */
+    fun setItemHeightPx(px: Int) {
+        if (itemHeightPx == px) return
+        itemHeightPx = px
         notifyDataSetChanged()
     }
 
@@ -46,6 +56,7 @@ class HomeRailAdapter(
         private val icon: ImageView = itemView.findViewById(R.id.icon)
 
         fun bind(item: RailItem) {
+            if (itemHeightPx > 0) itemView.layoutParams = itemView.layoutParams.apply { height = itemHeightPx }
             val app = item.app
             if (app != null) {
                 // The icon is already shaped (and given a background, if any)
@@ -70,5 +81,10 @@ class HomeRailAdapter(
                 true
             }
         }
+    }
+
+    companion object {
+        /** Rows the rail's height is divided into, so this many are always visible without scrolling. */
+        const val SLOTS_VISIBLE = 5
     }
 }

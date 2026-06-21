@@ -45,6 +45,17 @@ class SoftKeyBar @JvmOverloads constructor(
         bind(this.right, right)
     }
 
+    /**
+     * Swaps the center key's default accent pill for plain bold white text
+     * (e.g. the App Drawer's "SELECT", which sits over the wallpaper rather
+     * than the solid soft-key bar most other screens use).
+     */
+    fun setCenterPlainLabel(label: String?) {
+        bind(center, label)
+        center.background = null
+        center.setTextColor(ContextCompat.getColor(context, R.color.kai_text))
+    }
+
     fun setOnLeftClick(action: () -> Unit) = left.setOnClickListener { action() }
     fun setOnCenterClick(action: () -> Unit) = center.setOnClickListener { action() }
     fun setOnRightClick(action: () -> Unit) = right.setOnClickListener { action() }
