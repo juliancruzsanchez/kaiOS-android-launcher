@@ -1,0 +1,1 @@
+ADB Location: /Users/jc.sanchez/Library/Android/sdk/platform-tools/adb

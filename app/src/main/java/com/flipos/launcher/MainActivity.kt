@@ -1,0 +1,362 @@
+package com.flipos.launcher
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Bundle
+import android.provider.ContactsContract
+import android.view.KeyEvent
+import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.flipos.launcher.data.AppRepository
+import com.flipos.launcher.data.LauncherPrefs
+import com.flipos.launcher.data.NotificationCounts
+import com.flipos.launcher.ui.HomeRailAdapter
+import com.flipos.launcher.ui.RailItem
+import com.flipos.launcher.util.launchAppByKey
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * The KaiOS-style home screen:
+ *  - a vertical rail of shortcut icons on the left (keys 1-9, top to bottom),
+ *  - a large clock + date on the right, and
+ *  - "Notifications · apps · Contacts" soft keys along the bottom.
+ *
+ * Tap an icon (or press its number key, or D-pad to it and press OK) to launch.
+ * The center dots open All Apps; long-pressing them opens launcher Options.
+ */
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var prefs: LauncherPrefs
+    private lateinit var rail: RecyclerView
+    private lateinit var adapter: HomeRailAdapter
+    private lateinit var clock: TextView
+    private lateinit var ampm: TextView
+    private lateinit var weekday: TextView
+    private lateinit var dateLine: TextView
+    private lateinit var notifCallsGroup: View
+    private lateinit var notifCallsCount: TextView
+    private lateinit var notifMessagesGroup: View
+    private lateinit var notifMessagesCount: TextView
+    private lateinit var notifOtherGroup: View
+    private lateinit var notifOtherCount: TextView
+
+    private val ampmFmt = SimpleDateFormat("a", Locale.getDefault())
+    private val time12 = SimpleDateFormat("h:mm", Locale.getDefault())
+    private val time24 = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val weekdayFmt = SimpleDateFormat("EEEE", Locale.getDefault())
+    private val dateFmt = SimpleDateFormat("MMM d", Locale.getDefault())
+
+    /** Rail index awaiting an app from the picker (-1 = none). */
+    private var pendingIndex = -1
+
+    /** Set once a Back long-press has fired, so the matching key-up doesn't also open the drawer. */
+    private var backLongPressHandled = false
+
+    /** The accent color applied this onCreate, so [onResume] can detect a change and [recreate]. */
+    private var appliedAccentColor: LauncherPrefs.AccentColor? = null
+
+    private val pickLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK && pendingIndex >= 0) {
+            result.data?.getStringExtra(AppPickerActivity.EXTRA_APP_KEY)?.let { key ->
+                prefs.setShortcutAt(pendingIndex, key)
+            }
+        }
+        pendingIndex = -1
+        refreshShortcuts()
+    }
+
+    private val timeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) = updateClock()
+    }
+
+    private val notifListener: () -> Unit = { runOnUiThread { updateNotifSummary() } }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        prefs = LauncherPrefs(this)
+        val accent = prefs.getAccentColor()
+        appliedAccentColor = accent
+        if (accent.themeOverlayRes != 0) theme.applyStyle(accent.themeOverlayRes, true)
+        setContentView(R.layout.activity_main)
+
+        clock = findViewById(R.id.clock)
+        ampm = findViewById(R.id.ampm)
+        weekday = findViewById(R.id.weekday)
+        dateLine = findViewById(R.id.date_line)
+        notifCallsGroup = findViewById(R.id.notif_calls_group)
+        notifCallsCount = findViewById(R.id.notif_calls_count)
+        notifMessagesGroup = findViewById(R.id.notif_messages_group)
+        notifMessagesCount = findViewById(R.id.notif_messages_count)
+        notifOtherGroup = findViewById(R.id.notif_other_group)
+        notifOtherCount = findViewById(R.id.notif_other_count)
+        rail = findViewById(R.id.shortcuts_rail)
+
+        adapter = HomeRailAdapter(
+            onClick = { _, item -> onRailClick(item) },
+            onLongClick = { position, item -> onRailLongClick(position, item) },
+        )
+        rail.layoutManager = LinearLayoutManager(this)
+        rail.adapter = adapter
+        rail.itemAnimator = null
+
+        findViewById<TextView>(R.id.softkey_left).setOnClickListener { openNotifications() }
+        findViewById<TextView>(R.id.softkey_right).setOnClickListener { openRightKeyApp() }
+        findViewById<ImageView>(R.id.softkey_center).apply {
+            setOnClickListener { openAppDrawer() }
+            setOnLongClickListener { openOptions(); true }
+        }
+
+        // Back opens the app drawer; long-pressing it launches the configured app instead
+        // (see onKeyDown/onKeyUp, which suppress this callback when a long-press fires).
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = openAppDrawer()
+        })
+
+        updateClock()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerReceiver(
+            timeReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_TIME_TICK)
+                addAction(Intent.ACTION_TIME_CHANGED)
+                addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            },
+        )
+        updateClock()
+        refreshShortcuts()
+        refreshRightKeyLabel()
+        NotificationCounts.addListener(notifListener)
+        updateNotifSummary()
+        maybePromptDefaultLauncher()
+        // The accent color may have changed in Settings while Home was backgrounded;
+        // theme overlays only apply at onCreate, so recreate to pick it up. Done last
+        // (after registering the receiver/listener above) so onPause's matching
+        // unregister calls below still have something to unregister.
+        if (prefs.getAccentColor() != appliedAccentColor) recreate()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(timeReceiver)
+        NotificationCounts.removeListener(notifListener)
+    }
+
+    // ----------------------------------------------------------- Data / clock
+
+    private fun updateClock() {
+        val now = Date()
+        if (android.text.format.DateFormat.is24HourFormat(this)) {
+            ampm.visibility = TextView.GONE
+            clock.text = time24.format(now)
+        } else {
+            ampm.visibility = TextView.VISIBLE
+            ampm.text = ampmFmt.format(now)
+            clock.text = time12.format(now)
+        }
+        weekday.text = weekdayFmt.format(now)
+        dateLine.text = dateFmt.format(now)
+    }
+
+    private fun refreshShortcuts() {
+        Thread {
+            // Resolve each shortcut (any activity component), dropping ones whose
+            // app was uninstalled so the rail stays gap-free.
+            val keys = prefs.getShortcuts()
+            val resolved = keys.mapNotNull { key ->
+                AppRepository.resolveComponent(this, key)?.let { key to it }
+            }
+            if (resolved.size != keys.size) prefs.setShortcuts(resolved.map { it.first })
+
+            val entries = resolved.mapTo(ArrayList()) { RailItem(it.second) }
+            if (resolved.size < LauncherPrefs.MAX_SHORTCUTS) entries.add(RailItem(null))
+
+            if (isDestroyed) return@Thread
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                adapter.submit(entries)
+                rail.post {
+                    if (rail.focusedChild == null) {
+                        rail.layoutManager?.findViewByPosition(0)?.requestFocus()
+                    }
+                }
+            }
+        }.start()
+    }
+
+    // --------------------------------------------------------------- Actions
+
+    private fun onRailClick(item: RailItem) {
+        val app = item.app
+        if (app != null) launchAppByKey(app.key) else pickForIndex(prefs.getShortcuts().size)
+    }
+
+    private fun onRailLongClick(position: Int, item: RailItem) {
+        if (item.app == null) {
+            pickForIndex(prefs.getShortcuts().size)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle(item.app.label)
+            .setItems(arrayOf("Change app", "Remove from Home")) { _, which ->
+                when (which) {
+                    0 -> pickForIndex(position)
+                    1 -> {
+                        prefs.removeShortcutAt(position)
+                        refreshShortcuts()
+                    }
+                }
+            }
+            .show()
+    }
+
+    /** Open the phone dialer, prefilled with the pressed digit (or * / #). */
+    private fun startDial(digit: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", digit, null)))
+        } catch (e: Exception) {
+            Toast.makeText(this, "No dialer available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun pickForIndex(index: Int) {
+        pendingIndex = index
+        pickLauncher.launch(Intent(this, AppPickerActivity::class.java))
+    }
+
+    private fun openAppDrawer() = startActivity(Intent(this, AppDrawerActivity::class.java))
+
+    private fun openOptions() = startActivity(Intent(this, OptionsActivity::class.java))
+
+    private fun openRightKeyApp() {
+        val key = prefs.getRightKeyApp()
+        if (key != null) {
+            launchAppByKey(key)
+            return
+        }
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI))
+        } catch (e: Exception) {
+            try {
+                startActivity(Intent(Intent.ACTION_DIAL))
+            } catch (ignored: Exception) {
+                Toast.makeText(this, "No contacts app", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun updateNotifSummary() {
+        bindNotifBadge(notifCallsGroup, notifCallsCount, prefs.isCallBadgeEnabled(), NotificationCounts.calls)
+        bindNotifBadge(notifMessagesGroup, notifMessagesCount, prefs.isMessageBadgeEnabled(), NotificationCounts.messages)
+        bindNotifBadge(notifOtherGroup, notifOtherCount, prefs.isOtherBadgeEnabled(), NotificationCounts.other)
+    }
+
+    private fun bindNotifBadge(group: View, countView: TextView, enabled: Boolean, count: Int) {
+        if (enabled && count > 0) {
+            countView.text = if (count > 99) "99+" else count.toString()
+            group.visibility = View.VISIBLE
+        } else {
+            group.visibility = View.GONE
+        }
+    }
+
+    private fun refreshRightKeyLabel() {
+        val key = prefs.getRightKeyApp()
+        val label = key?.let { AppRepository.resolveComponent(this, it)?.label }
+            ?: getString(R.string.softkey_contacts)
+        findViewById<TextView>(R.id.softkey_right).text = label
+    }
+
+    private fun openDialer() {
+        try {
+            startActivity(Intent(Intent.ACTION_DIAL))
+        } catch (e: Exception) {
+            Toast.makeText(this, "No dialer available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /** The KaiOS "Notices" action: our own list screen, not the system shade. */
+    private fun openNotifications() = startActivity(Intent(this, NoticesActivity::class.java))
+
+    // ----------------------------------------------------------- Key handling
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        when (keyCode) {
+            // Start typing a number anywhere on Home -> jump into the dialer.
+            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
+                startDial(('0' + (keyCode - KeyEvent.KEYCODE_0)).toString())
+                return true
+            }
+            KeyEvent.KEYCODE_STAR -> { startDial("*"); return true }
+            KeyEvent.KEYCODE_POUND -> { startDial("#"); return true }
+            KeyEvent.KEYCODE_SOFT_LEFT -> { openNotifications(); return true }
+            KeyEvent.KEYCODE_SOFT_RIGHT -> { openRightKeyApp(); return true }
+            KeyEvent.KEYCODE_MENU -> { openAppDrawer(); return true }
+            KeyEvent.KEYCODE_CALL -> { openDialer(); return true }
+            KeyEvent.KEYCODE_BACK -> {
+                if (event.isLongPress) {
+                    backLongPressHandled = true
+                    launchBackLongPressApp()
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        // Swallow the key-up that follows a handled long-press so the
+        // OnBackPressedCallback above doesn't also open the app drawer.
+        if (keyCode == KeyEvent.KEYCODE_BACK && backLongPressHandled) {
+            backLongPressHandled = false
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+
+    private fun launchBackLongPressApp() {
+        val key = prefs.getBackLongPressApp()
+        if (key == null) {
+            Toast.makeText(this, R.string.back_longpress_unset_toast, Toast.LENGTH_SHORT).show()
+        } else {
+            launchAppByKey(key)
+        }
+    }
+
+    // ------------------------------------------------------ Default launcher
+
+    private fun isDefaultLauncher(): Boolean {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolved = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        return resolved?.activityInfo?.packageName == packageName
+    }
+
+    private fun maybePromptDefaultLauncher() {
+        // Gently hint, but never yank the user away — they opt in deliberately via
+        // Options → "Set as Default Launcher".
+        if (defaultPromptShown || isDefaultLauncher()) return
+        defaultPromptShown = true
+        Toast.makeText(this, R.string.choose_home_app, Toast.LENGTH_LONG).show()
+    }
+
+    companion object {
+        // Shown at most once per process so we don't nag on every resume.
+        private var defaultPromptShown = false
+    }
+}

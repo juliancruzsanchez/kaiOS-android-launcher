@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="softkey_height">48dp</dimen>
+    <dimen name="softkey_text">15sp</dimen>
+    <dimen name="clock_text">64sp</dimen>
+    <dimen name="date_text">18sp</dimen>
+    <dimen name="app_icon">61dp</dimen>
+    <dimen name="list_icon">40dp</dimen>
+    <dimen name="screen_title">25sp</dimen>
+    <dimen name="page_dot_size">8dp</dimen>
+    <dimen name="page_dot_margin">5dp</dimen>
+</resources>

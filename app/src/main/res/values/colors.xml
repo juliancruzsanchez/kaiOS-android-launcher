@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kai_bg">#0F1117</color>
+    <color name="kai_accent">#1FC3F4</color>
+    <color name="kai_text">#FFFFFF</color>
+    <color name="kai_text_secondary">#9BA1AD</color>
+    <color name="kai_divider">#2A2E3A</color>
+    <color name="kai_softkey_bg">#07080B</color>
+    <color name="kai_on_accent">#08222B</color>
+    <color name="kai_overlay">#B3000000</color>
+
+    <!-- Rainbow accent color presets, selectable in Settings. All kept light
+         enough that kai_on_accent (a dark navy) stays legible on top of them. -->
+    <color name="kai_accent_red">#FF5C5C</color>
+    <color name="kai_accent_orange">#FFA94D</color>
+    <color name="kai_accent_yellow">#FFD93D</color>
+    <color name="kai_accent_green">#4CD969</color>
+    <color name="kai_accent_blue">#3D7FFF</color>
+    <color name="kai_accent_indigo">#7C83FF</color>
+    <color name="kai_accent_violet">#C66BFF</color>
+</resources>

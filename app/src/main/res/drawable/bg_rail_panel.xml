@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Subtle frosted strip the left shortcut rail sits on. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#2BFFFFFF"
+        android:endColor="#05FFFFFF"
+        android:type="linear" />
+</shape>

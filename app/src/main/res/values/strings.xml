@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Flip Launcher</string>
+
+    <!-- Soft key labels -->
+    <string name="softkey_notifications">Notices</string>
+    <string name="softkey_contacts">Contacts</string>
+    <string name="softkey_options">Options</string>
+    <string name="softkey_open">Open</string>
+    <string name="softkey_back">Back</string>
+    <string name="softkey_select">Select</string>
+    <string name="softkey_toggle">Toggle</string>
+    <string name="softkey_clear">Clear</string>
+    <string name="softkey_activities">Activities</string>
+    <string name="softkey_dismiss">Dismiss</string>
+    <string name="softkey_dismiss_all">Dismiss All</string>
+
+    <!-- Options menu -->
+    <string name="opt_all_apps">All Apps</string>
+    <string name="opt_customize_shortcuts">Customize Home Shortcuts</string>
+    <string name="opt_hide_apps">Hide / Show Apps</string>
+    <string name="opt_set_wallpaper">Set Wallpaper</string>
+    <string name="opt_default_launcher">Set as Default Launcher</string>
+    <string name="opt_system_settings">System Settings</string>
+    <string name="opt_back_longpress">Back Button (Long-Press)</string>
+
+    <!-- App drawer context options -->
+    <string name="ctx_open">Open</string>
+    <string name="ctx_add_home">Add to Home Shortcuts</string>
+    <string name="ctx_hide">Hide App</string>
+    <string name="ctx_change_icon">Change Icon</string>
+    <string name="ctx_reset_icon">Reset Icon</string>
+    <string name="ctx_disable_wrap">Don\'t Wrap Icon</string>
+    <string name="ctx_enable_wrap">Wrap Icon</string>
+    <string name="ctx_uninstall">Uninstall</string>
+
+    <!-- Screen titles -->
+    <string name="title_all_apps">All Apps</string>
+    <string name="title_options">Options</string>
+    <string name="title_hide_apps">Hide / Show Apps</string>
+    <string name="title_shortcuts">Home Shortcuts</string>
+    <string name="title_pick_app">Choose an App</string>
+    <string name="title_pick_activity">Pick Activity</string>
+    <string name="title_notices">%1$d Notices</string>
+
+    <!-- Notices screen -->
+    <string name="notices_access_required">Turn on Notification Access in Launcher Settings to see notices here</string>
+    <string name="notices_open_failed">Can\'t open this notice</string>
+
+    <!-- Misc -->
+    <string name="empty_slot">Empty</string>
+    <string name="add_shortcut">Add shortcut</string>
+    <string name="shortcut_slot_label">Key %1$d</string>
+    <string name="home_full">Home is full (9 shortcuts max)</string>
+    <string name="content_apps">Open apps menu</string>
+    <string name="hidden_badge">Hidden</string>
+    <string name="choose_home_app">Choose this app as your Home screen to finish setup.</string>
+    <string name="back_longpress_not_set">Not set</string>
+    <string name="back_longpress_choose">Choose App</string>
+    <string name="back_longpress_clear">Clear</string>
+    <string name="back_longpress_app_set">Long-press Back will open %1$s</string>
+    <string name="back_longpress_app_cleared">Long-press Back is now unassigned</string>
+    <string name="back_longpress_unset_toast">No app set for long-press Back. Configure it in Options.</string>
+
+    <!-- Launcher Settings -->
+    <string name="title_launcher_settings">Launcher Settings</string>
+    <string name="opt_launcher_settings">Launcher Settings</string>
+    <string name="settings_icon_size">App Icon Size</string>
+    <string name="settings_icon_small">Small</string>
+    <string name="settings_icon_medium">Medium</string>
+    <string name="settings_icon_large">Large</string>
+    <string name="settings_icon_current">%1$s (%2$ddp)</string>
+    <string name="settings_right_key">Home Right Key</string>
+    <string name="settings_right_key_contacts">Contacts (default)</string>
+    <string name="settings_right_key_set">Right key will open %1$s</string>
+    <string name="settings_right_key_cleared">Right key reset to Contacts</string>
+    <string name="settings_icon_size_set">Icon size set to %1$s</string>
+    <string name="settings_icon_pack">Icon Pack</string>
+    <string name="settings_drawer_view">App Drawer View</string>
+    <string name="settings_drawer_view_grid">Grid</string>
+    <string name="settings_drawer_view_list">List</string>
+    <string name="settings_accent_color">Accent Color</string>
+    <string name="settings_accent_color_set">Accent color set to %1$s</string>
+    <string name="accent_color_default">Cyan (default)</string>
+    <string name="accent_color_red">Red</string>
+    <string name="accent_color_orange">Orange</string>
+    <string name="accent_color_yellow">Yellow</string>
+    <string name="accent_color_green">Green</string>
+    <string name="accent_color_blue">Blue</string>
+    <string name="accent_color_indigo">Indigo</string>
+    <string name="accent_color_violet">Violet</string>
+    <string name="settings_icon_shape">Icon Shape</string>
+    <string name="settings_icon_shape_set">Icon shape set to %1$s</string>
+    <string name="icon_shape_squircle">Squircle</string>
+    <string name="icon_shape_square">Square</string>
+    <string name="icon_shape_circle">Circle</string>
+    <string name="icon_shape_rounded_square">Rounded Square</string>
+    <string name="icon_shape_none">None</string>
+    <string name="settings_icon_background">Background for Plain Icons</string>
+
+    <!-- Icon packs -->
+    <string name="title_icon_packs">Icon Packs</string>
+    <string name="icon_pack_default">Default (No Pack)</string>
+    <string name="icon_pack_reset">Icons reset to default</string>
+    <string name="icon_pack_applied">Applied %1$s</string>
+    <string name="icon_picker_choose_pack">Choose Icon Pack</string>
+    <string name="icon_picker_built_in">Built-in Icons</string>
+    <string name="icon_picker_applied">Icon updated</string>
+    <string name="icon_picker_reset">Icon reset to default</string>
+
+    <!-- Notification badges -->
+    <string name="settings_notif_access">Notification Access</string>
+    <string name="settings_notif_access_granted">Granted</string>
+    <string name="settings_notif_access_denied">Not granted — tap to enable</string>
+    <string name="settings_notif_calls">Show Missed Calls</string>
+    <string name="settings_notif_messages">Show Messages</string>
+    <string name="settings_notif_other">Show Other Notifications</string>
+    <string name="settings_toggle_on">On</string>
+    <string name="settings_toggle_off">Off</string>
+    <string name="cd_notif_calls">Missed calls</string>
+    <string name="cd_notif_messages">Messages</string>
+    <string name="cd_notif_other">Other notifications</string>
+</resources>

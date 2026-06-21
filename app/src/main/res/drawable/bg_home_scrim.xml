@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Light top/bottom darkening so the status bar, clock and soft keys stay
+     legible over any wallpaper, without dulling it. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#59000000"
+                android:centerColor="#00000000"
+                android:endColor="#80000000"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>
