@@ -6,9 +6,7 @@ flagships. Navigation leans on the physical soft keys and D-pad: number keys
 1-9 double as shortcuts everywhere they make sense, and every screen mirrors
 the three-soft-key layout (left / center / right) KaiOS users already know.
 
-> 📸 **Screenshot placeholder** — Home screen
->
-> _Add a screenshot of the Home screen here._
+![Home Screen](docs/home.png)
 
 ## Features
 
@@ -21,9 +19,9 @@ the three-soft-key layout (left / center / right) KaiOS users already know.
 - A notification summary (missed calls / messages / other) under the clock,
   each independently toggleable.
 - Typing a digit anywhere on Home jumps straight into the dialer, prefilled.
-- Long-pressing Back launches a configurable app (Claude, etc.;).
+- Long-pressing Back launches a configurable app (Claude, etc.).
 
-> 📸 **Screenshot placeholder** — Home screen with shortcuts and notification badges
+![Home Screen](docs/home.png)
 
 ### App Drawer ("All Apps")
 
@@ -41,9 +39,8 @@ the three-soft-key layout (left / center / right) KaiOS users already know.
   - Reset a per-app icon override
   - Uninstall it
 
-> 📸 **Screenshot placeholder** — App Drawer, grid view
-
-> 📸 **Screenshot placeholder** — App Drawer, list view
+![App Drawer Grid](docs/apps.png)
+![App Drawer List](docs/list.png)
 
 ### Notices
 
@@ -57,7 +54,7 @@ timestamp ("2 minutes ago", "8:30 AM", …) per notification.
 
 Requires Notification Access, granted from Launcher Settings.
 
-> 📸 **Screenshot placeholder** — Notices screen
+![Notices](docs/notices.png)
 
 ### Options menu
 
@@ -93,10 +90,8 @@ key:
 - **Background for Plain Icons** — toggle the synthesized tint disc for
   non-adaptive icons
 
-> 📸 **Screenshot placeholder** — Launcher Settings
-
-> 📸 **Screenshot placeholder** — Accent color / icon shape pickers
-
+![Settings](docs/iconpack.png)
+![Icon Shape](docs/iconshape.png)
 ### Home Shortcuts
 
 Customize the ordered list of up to 9 Home rail shortcuts. Pick a shortcut
