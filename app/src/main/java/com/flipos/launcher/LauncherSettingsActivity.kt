@@ -29,6 +29,7 @@ class LauncherSettingsActivity : BaseListActivity() {
     private var notifCallsRow = -1
     private var notifMessagesRow = -1
     private var notifOtherRow = -1
+    private var notifIconDotsRow = -1
     private var accentColorRow = -1
     private var iconShapeRow = -1
     private var iconBackgroundRow = -1
@@ -86,6 +87,10 @@ class LauncherSettingsActivity : BaseListActivity() {
                 prefs.setOtherBadgeEnabled(!prefs.isOtherBadgeEnabled())
                 refreshRows()
             },
+            Setting(getString(R.string.settings_notif_icon_dots)) {
+                prefs.setIconNotificationDotEnabled(!prefs.isIconNotificationDotEnabled())
+                refreshRows()
+            },
             Setting(getString(R.string.settings_accent_color)) { chooseAccentColor() },
             Setting(getString(R.string.settings_icon_shape)) { chooseIconShape() },
             Setting(getString(R.string.settings_icon_background)) {
@@ -102,6 +107,7 @@ class LauncherSettingsActivity : BaseListActivity() {
         notifCallsRow = settings.indexOfFirst { it.title == getString(R.string.settings_notif_calls) }
         notifMessagesRow = settings.indexOfFirst { it.title == getString(R.string.settings_notif_messages) }
         notifOtherRow = settings.indexOfFirst { it.title == getString(R.string.settings_notif_other) }
+        notifIconDotsRow = settings.indexOfFirst { it.title == getString(R.string.settings_notif_icon_dots) }
         accentColorRow = settings.indexOfFirst { it.title == getString(R.string.settings_accent_color) }
         iconShapeRow = settings.indexOfFirst { it.title == getString(R.string.settings_icon_shape) }
         iconBackgroundRow = settings.indexOfFirst { it.title == getString(R.string.settings_icon_background) }
@@ -172,6 +178,7 @@ class LauncherSettingsActivity : BaseListActivity() {
                 notifCallsRow -> onOff(prefs.isCallBadgeEnabled())
                 notifMessagesRow -> onOff(prefs.isMessageBadgeEnabled())
                 notifOtherRow -> onOff(prefs.isOtherBadgeEnabled())
+                notifIconDotsRow -> onOff(prefs.isIconNotificationDotEnabled())
                 accentColorRow -> getString(prefs.getAccentColor().labelRes)
                 iconShapeRow -> getString(prefs.getIconShape().labelRes)
                 iconBackgroundRow -> onOff(prefs.isLegacyIconBackgroundEnabled())

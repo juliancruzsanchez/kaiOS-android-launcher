@@ -1,5 +1,6 @@
 package com.flipos.launcher.ui
 
+import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.R
 import com.flipos.launcher.data.AppInfo
+import com.flipos.launcher.data.NotificationDotColor
 
 /** Grid of apps used by the app drawer. Icons only — [onFocusChanged] lets the
  * screen mirror the focused app's name in its title bar in place of labels. */
@@ -16,6 +18,7 @@ class AppGridAdapter(
     private val onLongClick: (AppInfo) -> Unit,
     private val onFocusChanged: (AppInfo) -> Unit = {},
     private val iconSizeDp: Int = 61,
+    private val hasNotification: (AppInfo) -> Boolean = { false },
 ) : RecyclerView.Adapter<AppGridAdapter.VH>() {
 
     private val items = ArrayList<AppInfo>()
@@ -40,12 +43,19 @@ class AppGridAdapter(
 
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val icon: ImageView = itemView.findViewById(R.id.icon)
+        private val notifDot: View = itemView.findViewById(R.id.notif_dot)
 
         fun bind(app: AppInfo) {
             val px = (iconSizeDp * Resources.getSystem().displayMetrics.density).toInt()
             icon.layoutParams = icon.layoutParams.apply { width = px; height = px }
             icon.setImageDrawable(app.icon)
             icon.contentDescription = app.label
+            if (hasNotification(app)) {
+                notifDot.visibility = View.VISIBLE
+                notifDot.backgroundTintList = ColorStateList.valueOf(NotificationDotColor.forIcon(app.key, app.icon))
+            } else {
+                notifDot.visibility = View.GONE
+            }
             itemView.setOnClickListener { onClick(app) }
             itemView.setOnLongClickListener {
                 onLongClick(app)

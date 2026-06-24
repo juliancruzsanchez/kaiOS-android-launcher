@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.data.AppInfo
 import com.flipos.launcher.data.AppRepository
 import com.flipos.launcher.data.LauncherPrefs
+import com.flipos.launcher.data.NotificationCounts
+import com.flipos.launcher.data.NotificationDotColor
 import com.flipos.launcher.ui.AppGridAdapter
 import com.flipos.launcher.ui.ListRowAdapter
 import com.flipos.launcher.ui.PageIndicatorView
@@ -92,6 +94,7 @@ class AppDrawerActivity : AppCompatActivity() {
             // where "All Apps" normally sits so it's still identifiable.
             onFocusChanged = { titleView.text = it.label },
             iconSizeDp = prefs.getIconSize(),
+            hasNotification = ::hasNotification,
         )
         listAdapter = ListRowAdapter(
             onClick = { pos -> currentPageItems.getOrNull(pos)?.let { launchAppByKey(it.key) } },
@@ -143,13 +146,25 @@ class AppDrawerActivity : AppCompatActivity() {
         }.start()
     }
 
+    private fun hasNotification(app: AppInfo): Boolean =
+        prefs.isIconNotificationDotEnabled() && NotificationCounts.packagesWithNotifications.contains(app.packageName)
+
     private fun totalPages(): Int =
         if (allApps.isEmpty()) 1 else ceil(allApps.size / PAGE_SIZE.toDouble()).toInt()
 
     /** Bind the full app list in one go - no pages, no dots, just a normal scroll. */
     private fun bindList(focusPosition: Int? = null) {
         currentPageItems = allApps
-        listAdapter.submit(currentPageItems.map { Row(title = it.label, icon = it.icon, keepWhiteTitle = true) })
+        listAdapter.submit(
+            currentPageItems.map {
+                Row(
+                    title = it.label,
+                    icon = it.icon,
+                    keepWhiteTitle = true,
+                    badgeColor = if (hasNotification(it)) NotificationDotColor.forIcon(it.key, it.icon) else null,
+                )
+            },
+        )
         pageIndicator.visibility = View.GONE
         grid.post {
             if (currentPageItems.isEmpty()) return@post

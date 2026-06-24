@@ -15,6 +15,10 @@ object NotificationCounts {
     var other: Int = 0
         private set
 
+    /** Packages with at least one active notification, backing the per-app icon dot. */
+    var packagesWithNotifications: Set<String> = emptySet()
+        private set
+
     private val listeners = mutableSetOf<() -> Unit>()
 
     fun addListener(listener: () -> Unit) {
@@ -25,10 +29,11 @@ object NotificationCounts {
         listeners.remove(listener)
     }
 
-    fun update(calls: Int, messages: Int, other: Int) {
+    fun update(calls: Int, messages: Int, other: Int, packagesWithNotifications: Set<String>) {
         this.calls = calls
         this.messages = messages
         this.other = other
+        this.packagesWithNotifications = packagesWithNotifications
         listeners.toList().forEach { it() }
     }
 }
