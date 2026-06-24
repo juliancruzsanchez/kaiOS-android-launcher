@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: LauncherPrefs
     private lateinit var rail: RecyclerView
+    private lateinit var appMenuButton: ImageView
     private lateinit var adapter: HomeRailAdapter
     private lateinit var clock: TextView
     private lateinit var ampm: TextView
@@ -120,9 +121,9 @@ class MainActivity : AppCompatActivity() {
             adapter.setItemHeightPx(available / HomeRailAdapter.SLOTS_VISIBLE)
         }
 
-        findViewById<TextView>(R.id.softkey_left).setOnClickListener { openNotifications() }
+        findViewById<TextView>(R.id.softkey_left).setOnClickListener { openLeftKeyApp() }
         findViewById<TextView>(R.id.softkey_right).setOnClickListener { openRightKeyApp() }
-        findViewById<ImageView>(R.id.softkey_center).apply {
+        appMenuButton = findViewById<ImageView>(R.id.softkey_center).apply {
             setOnClickListener { openAppDrawer() }
             setOnLongClickListener { openOptions(); true }
         }
@@ -148,7 +149,9 @@ class MainActivity : AppCompatActivity() {
         )
         updateClock()
         refreshShortcuts()
+        refreshLeftKeyLabel()
         refreshRightKeyLabel()
+        focusAppMenu()
         NotificationCounts.addListener(notifListener)
         updateNotifSummary()
         maybePromptDefaultLauncher()
@@ -198,11 +201,6 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
                 adapter.submit(entries)
-                rail.post {
-                    if (rail.focusedChild == null) {
-                        rail.layoutManager?.findViewByPosition(0)?.requestFocus()
-                    }
-                }
             }
         }.start()
     }
@@ -249,6 +247,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun openAppDrawer() = startActivity(Intent(this, AppDrawerActivity::class.java))
 
+    /** Highlight the "open app menu" button by default whenever Home is shown. */
+    private fun focusAppMenu() = appMenuButton.post { appMenuButton.requestFocus() }
+
+    private fun openLeftKeyApp() {
+        val key = prefs.getLeftKeyApp()
+        if (key != null) launchAppByKey(key) else openNotifications()
+    }
+
     private fun openOptions() = startActivity(Intent(this, OptionsActivity::class.java))
 
     private fun openRightKeyApp() {
@@ -290,6 +296,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.softkey_right).text = label
     }
 
+    private fun refreshLeftKeyLabel() {
+        val key = prefs.getLeftKeyApp()
+        val label = key?.let { AppRepository.resolveComponent(this, it)?.label }
+            ?: getString(R.string.softkey_notifications)
+        findViewById<TextView>(R.id.softkey_left).text = label
+    }
+
     private fun openDialer() {
         try {
             startActivity(Intent(Intent.ACTION_DIAL))
@@ -306,13 +319,15 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         when (keyCode) {
             // Start typing a number anywhere on Home -> jump into the dialer.
-            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
-                startDial(('0' + (keyCode - KeyEvent.KEYCODE_0)).toString())
-                return true
-            }
-            KeyEvent.KEYCODE_STAR -> { startDial("*"); return true }
-            KeyEvent.KEYCODE_POUND -> { startDial("#"); return true }
-            KeyEvent.KEYCODE_SOFT_LEFT -> { openNotifications(); return true }
+            // The dialer is actually launched on key-up (see onKeyUp): launching
+            // it here on key-down leaves the matching key-up to be delivered to
+            // the now-focused dialer, which on some devices re-enters the same
+            // digit, so the first digit appears twice. Consuming the key-down
+            // here keeps the gesture entirely within Home until it completes.
+            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9,
+            KeyEvent.KEYCODE_STAR,
+            KeyEvent.KEYCODE_POUND -> return true
+            KeyEvent.KEYCODE_SOFT_LEFT -> { openLeftKeyApp(); return true }
             KeyEvent.KEYCODE_SOFT_RIGHT -> { openRightKeyApp(); return true }
             KeyEvent.KEYCODE_MENU -> { openAppDrawer(); return true }
             KeyEvent.KEYCODE_CALL -> { openDialer(); return true }
@@ -328,6 +343,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        when (keyCode) {
+            // Launch the dialer on key-up (not key-down) so the physical key
+            // event is fully consumed by Home before the dialer is focused,
+            // preventing the leading digit from being entered twice.
+            in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> {
+                startDial(('0' + (keyCode - KeyEvent.KEYCODE_0)).toString())
+                return true
+            }
+            KeyEvent.KEYCODE_STAR -> { startDial("*"); return true }
+            KeyEvent.KEYCODE_POUND -> { startDial("#"); return true }
+        }
         // Swallow the key-up that follows a handled long-press so the
         // OnBackPressedCallback above doesn't also open the app drawer.
         if (keyCode == KeyEvent.KEYCODE_BACK && backLongPressHandled) {
