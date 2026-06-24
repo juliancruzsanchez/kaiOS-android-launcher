@@ -126,6 +126,10 @@ class LauncherPrefs(context: Context) {
     fun isOtherBadgeEnabled(): Boolean = prefs.getBoolean(KEY_BADGE_OTHER, true)
     fun setOtherBadgeEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_BADGE_OTHER, enabled).apply()
 
+    /** Whether app icons in the drawer/Home show a small notification dot. */
+    fun isIconNotificationDotEnabled(): Boolean = prefs.getBoolean(KEY_BADGE_ICON_DOT, true)
+    fun setIconNotificationDotEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_BADGE_ICON_DOT, enabled).apply()
+
     // ------------------------------------------------------------- Icon packs
 
     /** Icon pack package applied launcher-wide, or null for default icons. */
@@ -235,6 +239,7 @@ class LauncherPrefs(context: Context) {
         private const val KEY_BADGE_CALLS = "badge_calls"
         private const val KEY_BADGE_MESSAGES = "badge_messages"
         private const val KEY_BADGE_OTHER = "badge_other"
+        private const val KEY_BADGE_ICON_DOT = "badge_icon_dot"
         private const val KEY_ACTIVE_ICON_PACK = "active_icon_pack"
         private const val KEY_DRAWER_LIST_VIEW = "drawer_list_view"
         private const val KEY_ICON_OVERRIDE_PREFIX = "icon_override_"

@@ -85,7 +85,12 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) = updateClock()
     }
 
-    private val notifListener: () -> Unit = { runOnUiThread { updateNotifSummary() } }
+    private val notifListener: () -> Unit = {
+        runOnUiThread {
+            updateNotifSummary()
+            adapter.notifyItemRangeChanged(0, adapter.itemCount)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +115,9 @@ class MainActivity : AppCompatActivity() {
         adapter = HomeRailAdapter(
             onClick = { _, item -> onRailClick(item) },
             onLongClick = { position, item -> onRailLongClick(position, item) },
+            hasNotification = { app ->
+                prefs.isIconNotificationDotEnabled() && NotificationCounts.packagesWithNotifications.contains(app.packageName)
+            },
         )
         rail.layoutManager = LinearLayoutManager(this)
         rail.adapter = adapter

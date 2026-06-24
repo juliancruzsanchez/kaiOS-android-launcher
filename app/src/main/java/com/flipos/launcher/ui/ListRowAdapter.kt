@@ -1,5 +1,6 @@
 package com.flipos.launcher.ui
 
+import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +22,9 @@ data class Row(
     // list view wants its title to read the same focused or not, like the
     // grid's labels do, so it opts out of that swap.
     val keepWhiteTitle: Boolean = false,
+    // Notification dot color shown over the leading icon, or null for none.
+    // Only set by the app drawer's list view; every other screen leaves it null.
+    val badgeColor: Int? = null,
 )
 
 /**
@@ -61,6 +65,7 @@ class ListRowAdapter(
 
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val icon: ImageView = itemView.findViewById(R.id.row_icon)
+        private val notifDot: View = itemView.findViewById(R.id.row_notif_dot)
         private val title: TextView = itemView.findViewById(R.id.row_title)
         private val trailing: TextView = itemView.findViewById(R.id.row_trailing)
 
@@ -75,6 +80,12 @@ class ListRowAdapter(
                     icon.visibility = View.VISIBLE
                 }
                 else -> icon.visibility = View.GONE
+            }
+            if (row.badgeColor != null) {
+                notifDot.visibility = View.VISIBLE
+                notifDot.backgroundTintList = ColorStateList.valueOf(row.badgeColor)
+            } else {
+                notifDot.visibility = View.GONE
             }
             title.text = row.title
             if (row.keepWhiteTitle) {

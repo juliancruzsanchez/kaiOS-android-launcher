@@ -1,5 +1,6 @@
 package com.flipos.launcher.ui
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.R
 import com.flipos.launcher.data.AppInfo
+import com.flipos.launcher.data.NotificationDotColor
 
 /** A rail entry: an app shortcut, or the trailing "add" tile when [app] is null. */
 data class RailItem(val app: AppInfo?)
@@ -21,6 +23,7 @@ data class RailItem(val app: AppInfo?)
 class HomeRailAdapter(
     private val onClick: (position: Int, item: RailItem) -> Unit,
     private val onLongClick: (position: Int, item: RailItem) -> Unit,
+    private val hasNotification: (AppInfo) -> Boolean = { false },
 ) : RecyclerView.Adapter<HomeRailAdapter.VH>() {
 
     private val items = ArrayList<RailItem>()
@@ -54,6 +57,7 @@ class HomeRailAdapter(
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val circle: FrameLayout = itemView.findViewById(R.id.circle)
         private val icon: ImageView = itemView.findViewById(R.id.icon)
+        private val notifDot: View = itemView.findViewById(R.id.notif_dot)
 
         fun bind(item: RailItem) {
             if (itemHeightPx > 0) itemView.layoutParams = itemView.layoutParams.apply { height = itemHeightPx }
@@ -65,11 +69,18 @@ class HomeRailAdapter(
                 icon.scaleType = ImageView.ScaleType.FIT_CENTER
                 icon.clearColorFilter()
                 icon.setImageDrawable(app.icon)
+                if (hasNotification(app)) {
+                    notifDot.visibility = View.VISIBLE
+                    notifDot.backgroundTintList = ColorStateList.valueOf(NotificationDotColor.forIcon(app.key, app.icon))
+                } else {
+                    notifDot.visibility = View.GONE
+                }
             } else {
                 circle.setBackgroundResource(R.drawable.bg_circle_add)
                 icon.scaleType = ImageView.ScaleType.FIT_CENTER
                 icon.setImageResource(R.drawable.ic_add)
                 icon.setColorFilter(Color.WHITE)
+                notifDot.visibility = View.GONE
             }
             itemView.setOnClickListener {
                 val pos = bindingAdapterPosition

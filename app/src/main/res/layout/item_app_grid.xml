@@ -10,10 +10,23 @@
     android:orientation="vertical"
     android:padding="8dp">
 
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="@dimen/app_icon"
-        android:layout_height="@dimen/app_icon"
-        android:scaleType="fitCenter" />
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="@dimen/app_icon"
+            android:layout_height="@dimen/app_icon"
+            android:scaleType="fitCenter" />
+
+        <View
+            android:id="@+id/notif_dot"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/bg_badge_dot"
+            android:visibility="gone" />
+    </FrameLayout>
 
 </LinearLayout>

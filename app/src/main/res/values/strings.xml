@@ -124,6 +124,7 @@
     <string name="settings_notif_calls">Show Missed Calls</string>
     <string name="settings_notif_messages">Show Messages</string>
     <string name="settings_notif_other">Show Other Notifications</string>
+    <string name="settings_notif_icon_dots">Notification Dots on Icons</string>
     <string name="settings_toggle_on">On</string>
     <string name="settings_toggle_off">Off</string>
     <string name="cd_notif_calls">Missed calls</string>

@@ -45,6 +45,7 @@ class NotificationCountService : NotificationListenerService() {
         var calls = 0
         var messages = 0
         var other = 0
+        val packages = HashSet<String>()
         val notices = ArrayList<NoticeItem>()
         for (sbn in active) {
             // Group summaries and our own posted-by-system rows aren't real, user-facing
@@ -55,9 +56,10 @@ class NotificationCountService : NotificationListenerService() {
                 Notification.CATEGORY_MESSAGE -> messages++
                 else -> other++
             }
+            packages.add(sbn.packageName)
             notices.add(toNoticeItem(sbn))
         }
-        NotificationCounts.update(calls, messages, other)
+        NotificationCounts.update(calls, messages, other, packages)
         NotificationStore.update(notices.sortedByDescending { it.postTime })
     }
 
