@@ -237,6 +237,31 @@ class AppDrawerActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Moves focus one cell left/right ([delta] = -1/+1) within the grid,
+     * treating the page as a single sequence so that pressing right off the end
+     * of a row lands on the first cell of the next row (and left off the start
+     * of a row lands on the last cell of the previous one). Pressing past the
+     * page's first/last cell flips to the adjacent page.
+     */
+    private fun moveFocusByColumn(delta: Int) {
+        val itemCount = currentPageItems.size
+        if (itemCount == 0) return
+        val target = focusedPosition() + delta
+        when {
+            target < 0 -> {
+                val prev = currentPage - 1
+                if (prev < 0) return
+                val prevCount = min(PAGE_SIZE, allApps.size - prev * PAGE_SIZE)
+                bindPage(prev, focusPosition = prevCount - 1)
+            }
+            target >= itemCount -> {
+                if (currentPage + 1 < totalPages()) bindPage(currentPage + 1, focusPosition = 0)
+            }
+            else -> grid.layoutManager?.findViewByPosition(target)?.requestFocus()
+        }
+    }
+
     /** Moves focus one row up/down ([delta] = -1/+1) in the (unpaged) list view. */
     private fun moveFocusLinear(delta: Int) {
         val itemCount = currentPageItems.size
@@ -355,6 +380,10 @@ class AppDrawerActivity : AppCompatActivity() {
             // page flip only happens once focus is already on the bottom/top row.
             KeyEvent.KEYCODE_DPAD_DOWN -> { if (listMode) moveFocusLinear(1) else moveFocusByRow(1); return true }
             KeyEvent.KEYCODE_DPAD_UP -> { if (listMode) moveFocusLinear(-1) else moveFocusByRow(-1); return true }
+            // In the grid, left/right wrap across rows (and pages) instead of
+            // stopping at a row edge; the list has no columns to move between.
+            KeyEvent.KEYCODE_DPAD_RIGHT -> { if (!listMode) { moveFocusByColumn(1); return true } }
+            KeyEvent.KEYCODE_DPAD_LEFT -> { if (!listMode) { moveFocusByColumn(-1); return true } }
             KeyEvent.KEYCODE_SOFT_LEFT -> { finish(); return true }
             KeyEvent.KEYCODE_SOFT_RIGHT, KeyEvent.KEYCODE_MENU -> { optionsForFocused(); return true }
         }

@@ -98,6 +98,15 @@ class LauncherPrefs(context: Context) {
         prefs.edit().putString(KEY_RIGHT_KEY_APP, key).apply()
     }
 
+    // ------------------------------------------------------ Home left key
+
+    /** App key launched by the left soft key on Home, or null for Notices. */
+    fun getLeftKeyApp(): String? = prefs.getString(KEY_LEFT_KEY_APP, null)
+
+    fun setLeftKeyApp(key: String?) {
+        prefs.edit().putString(KEY_LEFT_KEY_APP, key).apply()
+    }
+
     // ----------------------------------------------------- App drawer layout
 
     /** Whether the app drawer shows a single-column list instead of an icon grid. */
@@ -222,6 +231,7 @@ class LauncherPrefs(context: Context) {
         private const val KEY_BACK_LONGPRESS_APP = "back_longpress_app"
         private const val KEY_ICON_SIZE = "icon_size"
         private const val KEY_RIGHT_KEY_APP = "right_key_app"
+        private const val KEY_LEFT_KEY_APP = "left_key_app"
         private const val KEY_BADGE_CALLS = "badge_calls"
         private const val KEY_BADGE_MESSAGES = "badge_messages"
         private const val KEY_BADGE_OTHER = "badge_other"

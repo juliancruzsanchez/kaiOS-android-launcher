@@ -22,6 +22,7 @@ class LauncherSettingsActivity : BaseListActivity() {
 
     private var iconSizeRow = -1
     private var rightKeyRow = -1
+    private var leftKeyRow = -1
     private var iconPackRow = -1
     private var drawerViewRow = -1
     private var notifAccessRow = -1
@@ -45,6 +46,19 @@ class LauncherSettingsActivity : BaseListActivity() {
         }
     }
 
+    private val pickLeftKeyApp = registerForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.getStringExtra(AppPickerActivity.EXTRA_APP_KEY)?.let { key ->
+                prefs.setLeftKeyApp(key)
+                val label = AppRepository.resolveComponent(this, key)?.label
+                if (label != null) {
+                    Toast.makeText(this, getString(R.string.settings_left_key_set, label), Toast.LENGTH_SHORT).show()
+                }
+                refreshRows()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = LauncherPrefs(this)
@@ -52,6 +66,7 @@ class LauncherSettingsActivity : BaseListActivity() {
 
         settings = listOf(
             Setting(getString(R.string.settings_icon_size)) { chooseIconSize() },
+            Setting(getString(R.string.settings_left_key)) { chooseLeftKey() },
             Setting(getString(R.string.settings_right_key)) { chooseRightKey() },
             Setting(getString(R.string.settings_icon_pack)) { open(IconPackActivity::class.java) },
             Setting(getString(R.string.settings_drawer_view)) {
@@ -79,6 +94,7 @@ class LauncherSettingsActivity : BaseListActivity() {
             },
         )
         iconSizeRow = settings.indexOfFirst { it.title == getString(R.string.settings_icon_size) }
+        leftKeyRow = settings.indexOfFirst { it.title == getString(R.string.settings_left_key) }
         rightKeyRow = settings.indexOfFirst { it.title == getString(R.string.settings_right_key) }
         iconPackRow = settings.indexOfFirst { it.title == getString(R.string.settings_icon_pack) }
         drawerViewRow = settings.indexOfFirst { it.title == getString(R.string.settings_drawer_view) }
@@ -125,6 +141,11 @@ class LauncherSettingsActivity : BaseListActivity() {
             AppRepository.resolveComponent(this, it)?.label
         } ?: getString(R.string.settings_right_key_contacts)
 
+        val leftKey = prefs.getLeftKeyApp()
+        val leftTrailing = leftKey?.let {
+            AppRepository.resolveComponent(this, it)?.label
+        } ?: getString(R.string.settings_left_key_notices)
+
         val activePack = prefs.getActiveIconPack()
         val iconPackTrailing = activePack?.let { pkg ->
             IconPackRepository.getInstalledIconPacks(this).find { it.packageName == pkg }?.label
@@ -141,6 +162,7 @@ class LauncherSettingsActivity : BaseListActivity() {
         val rows = settings.mapIndexed { index, setting ->
             val trailing = when (index) {
                 iconSizeRow -> iconTrailing
+                leftKeyRow -> leftTrailing
                 rightKeyRow -> rightTrailing
                 iconPackRow -> iconPackTrailing
                 drawerViewRow -> getString(
@@ -235,6 +257,25 @@ class LauncherSettingsActivity : BaseListActivity() {
                     1 -> {
                         prefs.setRightKeyApp(null)
                         Toast.makeText(this, R.string.settings_right_key_cleared, Toast.LENGTH_SHORT).show()
+                        refreshRows()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun chooseLeftKey() {
+        val current = prefs.getLeftKeyApp()
+        val items = mutableListOf(getString(R.string.back_longpress_choose))
+        if (current != null) items.add(getString(R.string.settings_left_key_notices))
+        android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.settings_left_key)
+            .setItems(items.toTypedArray()) { _, which ->
+                when (which) {
+                    0 -> pickLeftKeyApp.launch(Intent(this, AppPickerActivity::class.java))
+                    1 -> {
+                        prefs.setLeftKeyApp(null)
+                        Toast.makeText(this, R.string.settings_left_key_cleared, Toast.LENGTH_SHORT).show()
                         refreshRows()
                     }
                 }
