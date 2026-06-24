@@ -29,6 +29,7 @@ import com.flipos.launcher.util.launchAppByKey
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.min
 
 /**
  * The KaiOS-style home screen:
@@ -114,11 +115,22 @@ class MainActivity : AppCompatActivity() {
         rail.layoutManager = LinearLayoutManager(this)
         rail.adapter = adapter
         rail.itemAnimator = null
+        // The rail is sized as a fraction of the screen width rather than a fixed
+        // dp so it (and the icons in it) scale with the phone instead of staying
+        // a fixed physical size on small/large displays.
+        rail.layoutParams = rail.layoutParams.apply {
+            width = (resources.displayMetrics.widthPixels * RAIL_WIDTH_FRACTION).toInt()
+        }
         // Slot height is computed from the rail's actual height so 5 shortcuts are
-        // always visible without scrolling, regardless of screen size/aspect ratio.
+        // always visible without scrolling, regardless of screen size/aspect ratio;
+        // the icon diameter is a fraction of each slot (capped by the rail's width)
+        // so it scales to fit and never overflows into the neighbouring slot.
         rail.doOnLayout {
-            val available = it.height - it.paddingTop - it.paddingBottom
-            adapter.setItemHeightPx(available / HomeRailAdapter.SLOTS_VISIBLE)
+            val availableHeight = it.height - it.paddingTop - it.paddingBottom
+            val slotHeight = availableHeight / HomeRailAdapter.SLOTS_VISIBLE
+            val availableWidth = it.width - it.paddingLeft - it.paddingRight
+            adapter.setItemHeightPx(slotHeight)
+            adapter.setIconDiameterPx((min(slotHeight, availableWidth) * ICON_DIAMETER_FRACTION).toInt())
         }
 
         findViewById<TextView>(R.id.softkey_left).setOnClickListener { openLeftKeyApp() }
@@ -391,5 +403,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         // Shown at most once per process so we don't nag on every resume.
         private var defaultPromptShown = false
+
+        /** Rail width as a fraction of screen width (≈ the old fixed 84dp on a typical phone). */
+        private const val RAIL_WIDTH_FRACTION = 0.22f
+
+        /** Icon disc diameter as a fraction of its slot (capped by the rail's inner width). */
+        private const val ICON_DIAMETER_FRACTION = 0.66f
     }
 }

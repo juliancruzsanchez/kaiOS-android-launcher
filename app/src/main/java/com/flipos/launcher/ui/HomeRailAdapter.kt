@@ -28,6 +28,9 @@ class HomeRailAdapter(
     /** Slot height in px so exactly [SLOTS_VISIBLE] rows fit the rail without scrolling. */
     private var itemHeightPx = -1
 
+    /** Icon disc diameter in px (a fraction of the slot); -1 falls back to the layout's size. */
+    private var iconDiameterPx = -1
+
     fun submit(list: List<RailItem>) {
         items.clear()
         items.addAll(list)
@@ -38,6 +41,13 @@ class HomeRailAdapter(
     fun setItemHeightPx(px: Int) {
         if (itemHeightPx == px) return
         itemHeightPx = px
+        notifyDataSetChanged()
+    }
+
+    /** Sizes every icon disc to this diameter; pass -1 to fall back to the layout's size. */
+    fun setIconDiameterPx(px: Int) {
+        if (iconDiameterPx == px) return
+        iconDiameterPx = px
         notifyDataSetChanged()
     }
 
@@ -57,6 +67,12 @@ class HomeRailAdapter(
 
         fun bind(item: RailItem) {
             if (itemHeightPx > 0) itemView.layoutParams = itemView.layoutParams.apply { height = itemHeightPx }
+            if (iconDiameterPx > 0) {
+                circle.layoutParams = circle.layoutParams.apply {
+                    width = iconDiameterPx
+                    height = iconDiameterPx
+                }
+            }
             val app = item.app
             if (app != null) {
                 // The icon is already shaped (and given a background, if any)
