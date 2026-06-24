@@ -1,4 +1,4 @@
-# Flip Launcher
+# KaiOS Android Launcher for Flip Phones
 
 A KaiOS-style Android launcher built for feature-phone-shaped devices (small,
 low-resolution, D-pad/soft-key driven screens) rather than touch-first
