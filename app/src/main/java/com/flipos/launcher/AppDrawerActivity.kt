@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -28,14 +29,17 @@ import kotlin.math.ceil
 import kotlin.math.min
 
 /**
- * The "Menu": every non-hidden app, shown as either a 3x3 icon grid or a
+ * The "Menu": every non-hidden app, shown as either a 3-column icon grid or a
  * single-column list (toggled in Launcher Settings).
  *
- * The grid pages nine apps at a time: D-pad navigates within a page, row by
- * row, and pressing down off the bottom row (or up off the top row) flips to
- * the next/previous page, tracked by a column of dots to the right. Number
- * keys 1-9 launch the matching position within the current page, echoing the
- * classic feature-phone menu. The list, by contrast, is one continuous,
+ * The grid is always 3 columns wide - so number keys 1-9 keep echoing a
+ * classic feature-phone dialpad layout - but pages as many rows as fit the
+ * screen's measured height (3 on a typical phone, more on a taller one),
+ * shrinking the icon size first if needed so nothing gets clipped. D-pad
+ * navigates within a page, row by row, and pressing down off the bottom row
+ * (or up off the top row) flips to the next/previous page, tracked by a
+ * column of dots to the right. Number keys 1-9 launch the matching position
+ * within the current page. The list, by contrast, is one continuous,
  * ordinary scroll - no pages, no dots, no number-key shortcuts - since
  * chopping a list into same-sized chunks doesn't carry the same meaning a
  * grid page does and only made scrolling feel choppy.
@@ -57,6 +61,11 @@ class AppDrawerActivity : AppCompatActivity() {
     private var currentPageItems: List<AppInfo> = emptyList()
     private var currentPage = 0
     private var listMode = false
+
+    /** Rows per page, recomputed once the grid is measured so taller screens
+     * show more rows instead of leaving empty space above the soft keys. */
+    private var rowsPerPage = DEFAULT_ROWS
+    private fun pageSize() = GRID_COLUMNS * rowsPerPage
 
     /** The accent color applied this onCreate, so [onResume] can detect a change and [recreate]. */
     private var appliedAccentColor: LauncherPrefs.AccentColor? = null
@@ -93,7 +102,7 @@ class AppDrawerActivity : AppCompatActivity() {
             // Labels are gone from the grid; mirror the focused app's name
             // where "All Apps" normally sits so it's still identifiable.
             onFocusChanged = { titleView.text = it.label },
-            iconSizeDp = prefs.getIconSize(),
+            initialIconSizeDp = prefs.getIconSize(),
             hasNotification = ::hasNotification,
         )
         listAdapter = ListRowAdapter(
@@ -108,6 +117,40 @@ class AppDrawerActivity : AppCompatActivity() {
         softKeys.setOnLeftClick { finish() }
         softKeys.setOnCenterClick { openFocused() }
         softKeys.setOnRightClick { optionsForFocused() }
+
+        // GRID_COLUMNS stays fixed (it mirrors the 1-9 dialpad shortcut), but
+        // rows and icon size only become knowable once the grid has an actual
+        // measured size - recompute them once that first layout pass lands.
+        grid.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (grid.width == 0 || grid.height == 0) return
+                grid.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                applyGridSizing()
+                refresh()
+            }
+        })
+    }
+
+    /**
+     * Figures out how many rows fit the grid's measured height, and shrinks
+     * the icon size (from the user's preferred size) just enough that every
+     * icon - at that row count and the fixed column count - stays fully
+     * visible instead of being clipped by its cell.
+     */
+    private fun applyGridSizing() {
+        val density = resources.displayMetrics.density
+        val availableWidthDp = (grid.width - grid.paddingStart - grid.paddingEnd) / density
+        val availableHeightDp = (grid.height - grid.paddingTop - grid.paddingBottom) / density
+        val preferredIconDp = prefs.getIconSize().toFloat()
+        val idealCellDp = preferredIconDp + CELL_OVERHEAD_DP
+
+        rowsPerPage = (availableHeightDp / idealCellDp).toInt().coerceIn(MIN_ROWS, MAX_ROWS)
+
+        val cellWidthDp = availableWidthDp / GRID_COLUMNS
+        val cellHeightDp = availableHeightDp / rowsPerPage
+        val fittedIconDp = minOf(preferredIconDp, cellWidthDp - CELL_OVERHEAD_DP, cellHeightDp - CELL_OVERHEAD_DP)
+            .coerceAtLeast(MIN_ICON_DP)
+        gridAdapter.setIconSizeDp(fittedIconDp.toInt())
     }
 
     override fun onResume() {
@@ -150,7 +193,7 @@ class AppDrawerActivity : AppCompatActivity() {
         prefs.isIconNotificationDotEnabled() && NotificationCounts.packagesWithNotifications.contains(app.packageName)
 
     private fun totalPages(): Int =
-        if (allApps.isEmpty()) 1 else ceil(allApps.size / PAGE_SIZE.toDouble()).toInt()
+        if (allApps.isEmpty()) 1 else ceil(allApps.size / pageSize().toDouble()).toInt()
 
     /** Bind the full app list in one go - no pages, no dots, just a normal scroll. */
     private fun bindList(focusPosition: Int? = null) {
@@ -175,8 +218,8 @@ class AppDrawerActivity : AppCompatActivity() {
     /** Swap the grid's contents to [page] and re-sync the dot indicator. */
     private fun bindPage(page: Int, focusPosition: Int? = null) {
         currentPage = page
-        val start = page * PAGE_SIZE
-        val end = min(start + PAGE_SIZE, allApps.size)
+        val start = page * pageSize()
+        val end = min(start + pageSize(), allApps.size)
         currentPageItems = if (start < end) allApps.subList(start, end) else emptyList()
         gridAdapter.submit(currentPageItems)
 
@@ -225,7 +268,7 @@ class AppDrawerActivity : AppCompatActivity() {
     }
 
     private fun lastRowStartForPage(page: Int): Int {
-        val count = min(PAGE_SIZE, allApps.size - page * PAGE_SIZE).coerceAtLeast(1)
+        val count = min(pageSize(), allApps.size - page * pageSize()).coerceAtLeast(1)
         return ((count - 1) / GRID_COLUMNS) * GRID_COLUMNS
     }
 
@@ -267,7 +310,7 @@ class AppDrawerActivity : AppCompatActivity() {
             target < 0 -> {
                 val prev = currentPage - 1
                 if (prev < 0) return
-                val prevCount = min(PAGE_SIZE, allApps.size - prev * PAGE_SIZE)
+                val prevCount = min(pageSize(), allApps.size - prev * pageSize())
                 bindPage(prev, focusPosition = prevCount - 1)
             }
             target >= itemCount -> {
@@ -384,8 +427,9 @@ class AppDrawerActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         when (keyCode) {
             in KeyEvent.KEYCODE_1..KeyEvent.KEYCODE_9 -> {
-                // Only the grid has a fixed nine-per-page shape for this
-                // feature-phone shortcut to map onto; the list just scrolls.
+                // Only the grid's first 3 rows line up with this feature-phone
+                // dialpad shortcut (any 4th+ row is reachable by D-pad only);
+                // the list just scrolls.
                 if (!listMode) {
                     currentPageItems.getOrNull(keyCode - KeyEvent.KEYCODE_1)?.let { launchAppByKey(it.key) }
                 }
@@ -407,6 +451,12 @@ class AppDrawerActivity : AppCompatActivity() {
 
     companion object {
         private const val GRID_COLUMNS = 3
-        private const val PAGE_SIZE = 9
+        private const val DEFAULT_ROWS = 3
+        private const val MIN_ROWS = 3
+        private const val MAX_ROWS = 6
+        private const val MIN_ICON_DP = 40f
+        // Margin + padding around the icon in item_app_grid.xml that eats into
+        // each cell's available space, on top of the icon itself.
+        private const val CELL_OVERHEAD_DP = 24f
     }
 }

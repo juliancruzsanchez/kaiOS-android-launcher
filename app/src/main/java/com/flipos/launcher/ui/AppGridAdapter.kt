@@ -17,11 +17,20 @@ class AppGridAdapter(
     private val onClick: (AppInfo) -> Unit,
     private val onLongClick: (AppInfo) -> Unit,
     private val onFocusChanged: (AppInfo) -> Unit = {},
-    private val iconSizeDp: Int = 61,
+    initialIconSizeDp: Int = 61,
     private val hasNotification: (AppInfo) -> Boolean = { false },
 ) : RecyclerView.Adapter<AppGridAdapter.VH>() {
 
     private val items = ArrayList<AppInfo>()
+    private var iconSizeDp: Int = initialIconSizeDp
+
+    /** Lets the screen shrink/grow icons to fit however many rows/columns it
+     * computed for the current screen, without ever clipping an icon. */
+    fun setIconSizeDp(sizeDp: Int) {
+        if (iconSizeDp == sizeDp) return
+        iconSizeDp = sizeDp
+        notifyDataSetChanged()
+    }
 
     fun submit(list: List<AppInfo>) {
         items.clear()
