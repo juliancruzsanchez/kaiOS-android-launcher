@@ -102,7 +102,7 @@ class AppDrawerActivity : AppCompatActivity() {
             // Labels are gone from the grid; mirror the focused app's name
             // where "All Apps" normally sits so it's still identifiable.
             onFocusChanged = { titleView.text = it.label },
-            initialIconSizeDp = prefs.getIconSize(),
+            initialIconSizeDp = preferredIconDp().toInt(),
             hasNotification = ::hasNotification,
         )
         listAdapter = ListRowAdapter(
@@ -131,17 +131,22 @@ class AppDrawerActivity : AppCompatActivity() {
         })
     }
 
+    /** The user's icon size preference, expressed as a percentage of
+     * [LauncherPrefs.BASE_ICON_SIZE_DP], resolved to a dp value. */
+    private fun preferredIconDp(): Float =
+        LauncherPrefs.BASE_ICON_SIZE_DP * prefs.getIconSizePercent() / 100f
+
     /**
      * Figures out how many rows fit the grid's measured height, and shrinks
-     * the icon size (from the user's preferred size) just enough that every
-     * icon - at that row count and the fixed column count - stays fully
-     * visible instead of being clipped by its cell.
+     * the icon size (from the user's preferred percentage) just enough that
+     * every icon - at that row count and the fixed column count - stays
+     * fully visible instead of being clipped by its cell.
      */
     private fun applyGridSizing() {
         val density = resources.displayMetrics.density
         val availableWidthDp = (grid.width - grid.paddingStart - grid.paddingEnd) / density
         val availableHeightDp = (grid.height - grid.paddingTop - grid.paddingBottom) / density
-        val preferredIconDp = prefs.getIconSize().toFloat()
+        val preferredIconDp = preferredIconDp()
         val idealCellDp = preferredIconDp + CELL_OVERHEAD_DP
 
         rowsPerPage = (availableHeightDp / idealCellDp).toInt().coerceIn(MIN_ROWS, MAX_ROWS)

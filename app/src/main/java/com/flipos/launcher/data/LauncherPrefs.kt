@@ -82,11 +82,13 @@ class LauncherPrefs(context: Context) {
 
     // ---------------------------------------------------------- Icon size
 
-    /** App drawer icon size in dp. Default is 61 (≈85% of the original 72). */
-    fun getIconSize(): Int = prefs.getInt(KEY_ICON_SIZE, DEFAULT_ICON_SIZE)
+    /** App drawer icon size as a percentage of [BASE_ICON_SIZE_DP], so it scales
+     * with whatever cell size the current screen ends up with instead of
+     * pinning to an absolute dp value. Default is 85%. */
+    fun getIconSizePercent(): Int = prefs.getInt(KEY_ICON_SIZE_PERCENT, DEFAULT_ICON_SIZE_PERCENT)
 
-    fun setIconSize(dp: Int) {
-        prefs.edit().putInt(KEY_ICON_SIZE, dp).apply()
+    fun setIconSizePercent(percent: Int) {
+        prefs.edit().putInt(KEY_ICON_SIZE_PERCENT, percent).apply()
     }
 
     // ----------------------------------------------------- Home right key
@@ -226,14 +228,16 @@ class LauncherPrefs(context: Context) {
         /** Maximum number of home shortcuts (mapped to keys 1..9). */
         const val MAX_SHORTCUTS = 9
 
-        /** Default icon size (15% smaller than the original 72dp). */
-        const val DEFAULT_ICON_SIZE = 61
+        /** The dp size a 100% icon corresponds to, before any per-screen fitting. */
+        const val BASE_ICON_SIZE_DP = 72
+
+        const val DEFAULT_ICON_SIZE_PERCENT = 85
 
         private const val PREFS_NAME = "flip_launcher_prefs"
         private const val KEY_HIDDEN = "hidden_apps"
         private const val KEY_SHORTCUTS = "home_shortcuts"
         private const val KEY_BACK_LONGPRESS_APP = "back_longpress_app"
-        private const val KEY_ICON_SIZE = "icon_size"
+        private const val KEY_ICON_SIZE_PERCENT = "icon_size_percent"
         private const val KEY_RIGHT_KEY_APP = "right_key_app"
         private const val KEY_LEFT_KEY_APP = "left_key_app"
         private const val KEY_BADGE_CALLS = "badge_calls"
