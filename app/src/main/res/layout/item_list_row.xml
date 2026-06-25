@@ -33,8 +33,8 @@
 
             <View
                 android:id="@+id/row_notif_dot"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:layout_gravity="top|end"
                 android:background="@drawable/bg_badge_dot"
                 android:visibility="gone" />
