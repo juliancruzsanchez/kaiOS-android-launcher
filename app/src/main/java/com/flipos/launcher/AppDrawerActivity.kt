@@ -57,6 +57,8 @@ class AppDrawerActivity : AppCompatActivity() {
     private var currentPageItems: List<AppInfo> = emptyList()
     private var currentPage = 0
     private var listMode = false
+    private var gridColumns = GRID_COLUMNS
+    private var pageSize = PAGE_SIZE
 
     /** The accent color applied this onCreate, so [onResume] can detect a change and [recreate]. */
     private var appliedAccentColor: LauncherPrefs.AccentColor? = null
@@ -102,6 +104,11 @@ class AppDrawerActivity : AppCompatActivity() {
             onFocusChanged = { pos -> currentPageItems.getOrNull(pos)?.let { titleView.text = it.label } },
         )
         grid.itemAnimator = null
+        grid.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            val oldPageSize = pageSize
+            updatePageSize()
+            if (oldPageSize != pageSize) refresh()
+        }
 
         softKeys.setLabels(null, null, getString(R.string.softkey_options))
         softKeys.setCenterPlainLabel(getString(R.string.softkey_select).uppercase())
@@ -125,8 +132,24 @@ class AppDrawerActivity : AppCompatActivity() {
         val wantList = prefs.isDrawerListViewEnabled()
         if (wantList == listMode && grid.adapter != null) return
         listMode = wantList
-        grid.layoutManager = if (listMode) LinearLayoutManager(this) else GridLayoutManager(this, GRID_COLUMNS)
+        updatePageSize()
+        grid.layoutManager = if (listMode) LinearLayoutManager(this) else GridLayoutManager(this, gridColumns)
         grid.adapter = if (listMode) listAdapter else gridAdapter
+    }
+
+    private fun updatePageSize() {
+        if (listMode) {
+            pageSize = PAGE_SIZE
+            return
+        }
+        val gridHeight = grid.height
+        if (gridHeight <= 0) return
+
+        val density = resources.displayMetrics.density
+        val itemHeightPx = (prefs.getIconSize() + 24) * density
+        val rows = (gridHeight / itemHeightPx).toInt().coerceAtLeast(3)
+        gridColumns = GRID_COLUMNS
+        pageSize = gridColumns * rows
     }
 
     private fun refresh() {
@@ -150,7 +173,7 @@ class AppDrawerActivity : AppCompatActivity() {
         prefs.isIconNotificationDotEnabled() && NotificationCounts.packagesWithNotifications.contains(app.packageName)
 
     private fun totalPages(): Int =
-        if (allApps.isEmpty()) 1 else ceil(allApps.size / PAGE_SIZE.toDouble()).toInt()
+        if (allApps.isEmpty()) 1 else ceil(allApps.size / pageSize.toDouble()).toInt()
 
     /** Bind the full app list in one go - no pages, no dots, just a normal scroll. */
     private fun bindList(focusPosition: Int? = null) {
@@ -175,8 +198,8 @@ class AppDrawerActivity : AppCompatActivity() {
     /** Swap the grid's contents to [page] and re-sync the dot indicator. */
     private fun bindPage(page: Int, focusPosition: Int? = null) {
         currentPage = page
-        val start = page * PAGE_SIZE
-        val end = min(start + PAGE_SIZE, allApps.size)
+        val start = page * pageSize
+        val end = min(start + pageSize, allApps.size)
         currentPageItems = if (start < end) allApps.subList(start, end) else emptyList()
         gridAdapter.submit(currentPageItems)
 
@@ -220,13 +243,13 @@ class AppDrawerActivity : AppCompatActivity() {
     /** Flip to [page], keeping the focused column and landing on the matching row. */
     private fun goToPage(page: Int, landOnLastRow: Boolean) {
         if (page < 0 || page >= totalPages()) return
-        val column = focusedPosition() % GRID_COLUMNS
+        val column = focusedPosition() % gridColumns
         bindPage(page, focusPosition = if (landOnLastRow) lastRowStartForPage(page) + column else column)
     }
 
     private fun lastRowStartForPage(page: Int): Int {
-        val count = min(PAGE_SIZE, allApps.size - page * PAGE_SIZE).coerceAtLeast(1)
-        return ((count - 1) / GRID_COLUMNS) * GRID_COLUMNS
+        val count = min(pageSize, allApps.size - page * pageSize).coerceAtLeast(1)
+        return ((count - 1) / gridColumns) * gridColumns
     }
 
     /**
@@ -238,15 +261,15 @@ class AppDrawerActivity : AppCompatActivity() {
         val itemCount = currentPageItems.size
         if (itemCount == 0) return
         val position = focusedPosition()
-        val row = position / GRID_COLUMNS
-        val column = position % GRID_COLUMNS
-        val lastRow = (itemCount - 1) / GRID_COLUMNS
+        val row = position / gridColumns
+        val column = position % gridColumns
+        val lastRow = (itemCount - 1) / gridColumns
         val targetRow = row + rowDelta
         when {
             targetRow < 0 -> goToPage(currentPage - 1, landOnLastRow = true)
             targetRow > lastRow -> goToPage(currentPage + 1, landOnLastRow = false)
             else -> {
-                val target = (targetRow * GRID_COLUMNS + column).coerceAtMost(itemCount - 1)
+                val target = (targetRow * gridColumns + column).coerceAtMost(itemCount - 1)
                 grid.layoutManager?.findViewByPosition(target)?.requestFocus()
             }
         }
@@ -267,7 +290,7 @@ class AppDrawerActivity : AppCompatActivity() {
             target < 0 -> {
                 val prev = currentPage - 1
                 if (prev < 0) return
-                val prevCount = min(PAGE_SIZE, allApps.size - prev * PAGE_SIZE)
+                val prevCount = min(pageSize, allApps.size - prev * pageSize)
                 bindPage(prev, focusPosition = prevCount - 1)
             }
             target >= itemCount -> {
