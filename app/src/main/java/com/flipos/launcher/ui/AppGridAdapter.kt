@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.R
 import com.flipos.launcher.data.AppInfo
@@ -46,7 +47,9 @@ class AppGridAdapter(
         private val notifDot: View = itemView.findViewById(R.id.notif_dot)
 
         fun bind(app: AppInfo) {
-            val px = (iconSizeDp * Resources.getSystem().displayMetrics.density).toInt()
+            val density = Resources.getSystem().displayMetrics.density
+            val desiredPx = (iconSizeDp * density).toInt()
+            val px = desiredPx.coerceAtMost(maxIconPx(density))
             icon.layoutParams = icon.layoutParams.apply { width = px; height = px }
             icon.setImageDrawable(app.icon)
             icon.contentDescription = app.label
@@ -65,5 +68,22 @@ class AppGridAdapter(
                 if (hasFocus) onFocusChanged(app)
             }
         }
+
+        /** Shrinks the icon to fit the grid's current column width, so a large
+         * icon-size preference can't overflow past item_app_grid's 24dp of
+         * margin+padding and get clipped by the FrameLayout on a narrow screen. */
+        private fun maxIconPx(density: Float): Int {
+            val rv = itemView.parent as? RecyclerView ?: return Int.MAX_VALUE
+            val columns = (rv.layoutManager as? GridLayoutManager)?.spanCount ?: return Int.MAX_VALUE
+            if (rv.width <= 0 || columns <= 0) return Int.MAX_VALUE
+            val cellWidth = (rv.width - rv.paddingStart - rv.paddingEnd) / columns
+            val overheadPx = (ITEM_OVERHEAD_DP * density).toInt()
+            return (cellWidth - overheadPx).coerceAtLeast(0)
+        }
+    }
+
+    private companion object {
+        /** item_app_grid's 4dp margin + 8dp padding on each side. */
+        const val ITEM_OVERHEAD_DP = 24
     }
 }
