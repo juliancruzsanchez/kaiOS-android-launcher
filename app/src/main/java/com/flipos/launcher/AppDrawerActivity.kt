@@ -95,7 +95,7 @@ class AppDrawerActivity : AppCompatActivity() {
             // Labels are gone from the grid; mirror the focused app's name
             // where "All Apps" normally sits so it's still identifiable.
             onFocusChanged = { titleView.text = it.label },
-            iconSizeDp = prefs.getIconSize(),
+            iconSizePercent = prefs.getIconSizePercent(),
             hasNotification = ::hasNotification,
         )
         listAdapter = ListRowAdapter(
@@ -143,10 +143,14 @@ class AppDrawerActivity : AppCompatActivity() {
             return
         }
         val gridHeight = grid.height
-        if (gridHeight <= 0) return
+        val gridWidth = grid.width
+        if (gridHeight <= 0 || gridWidth <= 0) return
 
         val density = resources.displayMetrics.density
-        val itemHeightPx = (prefs.getIconSize() + 24) * density
+        val overheadPx = (AppGridAdapter.ITEM_OVERHEAD_DP * density).toInt()
+        val cellWidth = (gridWidth - grid.paddingStart - grid.paddingEnd) / GRID_COLUMNS
+        val iconPx = (cellWidth - overheadPx).coerceAtLeast(0) * prefs.getIconSizePercent() / 100
+        val itemHeightPx = iconPx + overheadPx
         val rows = (gridHeight / itemHeightPx).toInt().coerceAtLeast(3)
         gridColumns = GRID_COLUMNS
         pageSize = gridColumns * rows

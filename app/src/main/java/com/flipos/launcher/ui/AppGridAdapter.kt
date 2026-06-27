@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.flipos.launcher.R
 import com.flipos.launcher.data.AppInfo
+import com.flipos.launcher.data.LauncherPrefs
 import com.flipos.launcher.data.NotificationDotColor
 
 /** Grid of apps used by the app drawer. Icons only — [onFocusChanged] lets the
@@ -18,7 +19,7 @@ class AppGridAdapter(
     private val onClick: (AppInfo) -> Unit,
     private val onLongClick: (AppInfo) -> Unit,
     private val onFocusChanged: (AppInfo) -> Unit = {},
-    private val iconSizeDp: Int = 61,
+    private val iconSizePercent: Int = LauncherPrefs.DEFAULT_ICON_SIZE_PERCENT,
     private val hasNotification: (AppInfo) -> Boolean = { false },
 ) : RecyclerView.Adapter<AppGridAdapter.VH>() {
 
@@ -47,9 +48,7 @@ class AppGridAdapter(
         private val notifDot: View = itemView.findViewById(R.id.notif_dot)
 
         fun bind(app: AppInfo) {
-            val density = Resources.getSystem().displayMetrics.density
-            val desiredPx = (iconSizeDp * density).toInt()
-            val px = desiredPx.coerceAtMost(maxIconPx(density))
+            val px = iconPx()
             icon.layoutParams = icon.layoutParams.apply { width = px; height = px }
             icon.setImageDrawable(app.icon)
             icon.contentDescription = app.label
@@ -69,20 +68,25 @@ class AppGridAdapter(
             }
         }
 
-        /** Shrinks the icon to fit the grid's current column width, so a large
-         * icon-size preference can't overflow past item_app_grid's 24dp of
-         * margin+padding and get clipped by the FrameLayout on a narrow screen. */
-        private fun maxIconPx(density: Float): Int {
-            val rv = itemView.parent as? RecyclerView ?: return Int.MAX_VALUE
-            val columns = (rv.layoutManager as? GridLayoutManager)?.spanCount ?: return Int.MAX_VALUE
-            if (rv.width <= 0 || columns <= 0) return Int.MAX_VALUE
+        /** [iconSizePercent] of the grid's current column width, after
+         * item_app_grid's 4dp margin + 8dp padding on each side - sized off the
+         * actual cell, not a fixed dp value, so it can never overflow past the
+         * FrameLayout and get clipped, regardless of screen width. */
+        private fun iconPx(): Int {
+            val rv = itemView.parent as? RecyclerView ?: return fallbackIconPx()
+            val columns = (rv.layoutManager as? GridLayoutManager)?.spanCount ?: return fallbackIconPx()
+            if (rv.width <= 0 || columns <= 0) return fallbackIconPx()
+            val density = Resources.getSystem().displayMetrics.density
             val cellWidth = (rv.width - rv.paddingStart - rv.paddingEnd) / columns
             val overheadPx = (ITEM_OVERHEAD_DP * density).toInt()
-            return (cellWidth - overheadPx).coerceAtLeast(0)
+            val available = (cellWidth - overheadPx).coerceAtLeast(0)
+            return available * iconSizePercent / 100
         }
+
+        private fun fallbackIconPx(): Int = itemView.resources.getDimensionPixelSize(R.dimen.app_icon)
     }
 
-    private companion object {
+    companion object {
         /** item_app_grid's 4dp margin + 8dp padding on each side. */
         const val ITEM_OVERHEAD_DP = 24
     }

@@ -82,11 +82,11 @@ class LauncherPrefs(context: Context) {
 
     // ---------------------------------------------------------- Icon size
 
-    /** App drawer icon size in dp. Default is 61 (≈85% of the original 72). */
-    fun getIconSize(): Int = prefs.getInt(KEY_ICON_SIZE, DEFAULT_ICON_SIZE)
+    /** App drawer icon size as a percentage of each grid cell's available space. */
+    fun getIconSizePercent(): Int = prefs.getInt(KEY_ICON_SIZE, DEFAULT_ICON_SIZE_PERCENT)
 
-    fun setIconSize(dp: Int) {
-        prefs.edit().putInt(KEY_ICON_SIZE, dp).apply()
+    fun setIconSizePercent(percent: Int) {
+        prefs.edit().putInt(KEY_ICON_SIZE, percent).apply()
     }
 
     // ----------------------------------------------------- Home right key
@@ -226,8 +226,8 @@ class LauncherPrefs(context: Context) {
         /** Maximum number of home shortcuts (mapped to keys 1..9). */
         const val MAX_SHORTCUTS = 9
 
-        /** Default icon size (15% smaller than the original 72dp). */
-        const val DEFAULT_ICON_SIZE = 61
+        /** Default icon size as a percentage of each grid cell's available space. */
+        const val DEFAULT_ICON_SIZE_PERCENT = 80
 
         private const val PREFS_NAME = "flip_launcher_prefs"
         private const val KEY_HIDDEN = "hidden_apps"
