@@ -95,7 +95,7 @@ class AppDrawerActivity : AppCompatActivity() {
             // Labels are gone from the grid; mirror the focused app's name
             // where "All Apps" normally sits so it's still identifiable.
             onFocusChanged = { titleView.text = it.label },
-            iconSizeDp = prefs.getIconSize(),
+            iconSizePercent = prefs.getIconSizePercent(),
             hasNotification = ::hasNotification,
         )
         listAdapter = ListRowAdapter(
@@ -142,14 +142,23 @@ class AppDrawerActivity : AppCompatActivity() {
             pageSize = PAGE_SIZE
             return
         }
+        val gridWidth = grid.width
         val gridHeight = grid.height
-        if (gridHeight <= 0) return
+        if (gridWidth <= 0 || gridHeight <= 0) return
 
-        val density = resources.displayMetrics.density
-        val itemHeightPx = (prefs.getIconSize() + 24) * density
-        val rows = (gridHeight / itemHeightPx).toInt().coerceAtLeast(3)
         gridColumns = GRID_COLUMNS
+        val contentWidth = gridWidth - grid.paddingStart - grid.paddingEnd
+        val contentHeight = gridHeight - grid.paddingTop - grid.paddingBottom
+        val density = resources.displayMetrics.density
+        val fitIconPx = AppGridAdapter.baseFitIconPx(contentWidth, contentHeight, gridColumns, density)
+        val desiredIconPx = fitIconPx * prefs.getIconSizePercent() / 100
+        val itemHeightPx = desiredIconPx + (AppGridAdapter.ITEM_OVERHEAD_DP * density).toInt()
+        val rows = (contentHeight / itemHeightPx.coerceAtLeast(1)).coerceAtLeast(3)
         pageSize = gridColumns * rows
+        // Below the floor of 3 rows, the icon-size clamp (not this page-size
+        // math) is what actually keeps the grid from overflowing - it shrinks
+        // icons to fit instead of forcing fewer, undersized rows.
+        gridAdapter.setGridMetrics(contentWidth, contentHeight, gridColumns, rows)
     }
 
     private fun refresh() {

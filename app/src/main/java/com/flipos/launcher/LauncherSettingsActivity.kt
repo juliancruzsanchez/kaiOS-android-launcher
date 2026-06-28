@@ -134,13 +134,13 @@ class LauncherSettingsActivity : BaseListActivity() {
     }
 
     private fun refreshRows() {
-        val iconDp = prefs.getIconSize()
+        val iconPercent = prefs.getIconSizePercent()
         val iconSizeLabel = when {
-            iconDp <= 52 -> getString(R.string.settings_icon_small)
-            iconDp >= 72 -> getString(R.string.settings_icon_large)
+            iconPercent <= 80 -> getString(R.string.settings_icon_small)
+            iconPercent >= 120 -> getString(R.string.settings_icon_large)
             else -> getString(R.string.settings_icon_medium)
         }
-        val iconTrailing = getString(R.string.settings_icon_current, iconSizeLabel, iconDp)
+        val iconTrailing = getString(R.string.settings_icon_current, iconSizeLabel, iconPercent)
 
         val rightKey = prefs.getRightKeyApp()
         val rightTrailing = rightKey?.let {
@@ -200,19 +200,19 @@ class LauncherSettingsActivity : BaseListActivity() {
         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
 
     private fun chooseIconSize() {
-        val current = prefs.getIconSize()
+        val current = prefs.getIconSizePercent()
         val labels = arrayOf(
             getString(R.string.settings_icon_small),
             getString(R.string.settings_icon_medium),
             getString(R.string.settings_icon_large),
         )
-        val values = listOf(52, 61, 72)
+        val values = listOf(80, 100, 120)
         val checked = values.indexOf(current).coerceAtLeast(0)
         android.app.AlertDialog.Builder(this)
             .setTitle(R.string.settings_icon_size)
             .setSingleChoiceItems(labels, checked) { dialog, which ->
-                val dp = values[which]
-                prefs.setIconSize(dp)
+                val percent = values[which]
+                prefs.setIconSizePercent(percent)
                 Toast.makeText(this, getString(R.string.settings_icon_size_set, labels[which]), Toast.LENGTH_SHORT).show()
                 refreshRows()
                 dialog.dismiss()

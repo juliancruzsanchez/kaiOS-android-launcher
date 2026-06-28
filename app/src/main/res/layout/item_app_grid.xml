@@ -3,16 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
-    android:background="@drawable/bg_item_focus"
     android:clickable="true"
+    android:defaultFocusHighlightEnabled="false"
     android:focusable="true"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="8dp">
 
     <FrameLayout
+        android:id="@+id/icon_frame"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:duplicateParentState="true"
+        android:padding="6dp">
 
         <ImageView
             android:id="@+id/icon"

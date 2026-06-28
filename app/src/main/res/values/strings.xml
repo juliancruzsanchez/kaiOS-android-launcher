@@ -69,7 +69,7 @@
     <string name="settings_icon_small">Small</string>
     <string name="settings_icon_medium">Medium</string>
     <string name="settings_icon_large">Large</string>
-    <string name="settings_icon_current">%1$s (%2$ddp)</string>
+    <string name="settings_icon_current">%1$s (%2$d%%)</string>
     <string name="settings_right_key">Home Right Key</string>
     <string name="settings_right_key_contacts">Contacts (default)</string>
     <string name="settings_right_key_set">Right key will open %1$s</string>

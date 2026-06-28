@@ -134,6 +134,24 @@ class MainActivity : AppCompatActivity() {
         appMenuButton = findViewById<ImageView>(R.id.softkey_center).apply {
             setOnClickListener { openAppDrawer() }
             setOnLongClickListener { openOptions(); true }
+            // Default geometric focus search would otherwise jump to the rail's
+            // bottom-most item, since the rail spans the full screen height and
+            // its bottom edge sits closest to this bottom-aligned button. Left
+            // and right both land here since the rail sits to this button's
+            // left, but Home's only other focusable column is to the right
+            // (the soft keys), so both directions should land on the first
+            // pinned shortcut rather than wherever focus search happens to pick.
+            setOnKeyListener { _, keyCode, event ->
+                if (
+                    (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_DPAD_LEFT) &&
+                    event.action == KeyEvent.ACTION_DOWN
+                ) {
+                    rail.layoutManager?.findViewByPosition(0)?.requestFocus() ?: rail.requestFocus()
+                    true
+                } else {
+                    false
+                }
+            }
         }
 
         // Back opens the app drawer; long-pressing it launches the configured app instead
