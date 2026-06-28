@@ -134,22 +134,22 @@ class MainActivity : AppCompatActivity() {
         appMenuButton = findViewById<ImageView>(R.id.softkey_center).apply {
             setOnClickListener { openAppDrawer() }
             setOnLongClickListener { openOptions(); true }
-            // Default geometric focus search would otherwise jump to the rail's
-            // bottom-most item, since the rail spans the full screen height and
-            // its bottom edge sits closest to this bottom-aligned button. Left
-            // and right both land here since the rail sits to this button's
-            // left, but Home's only other focusable column is to the right
-            // (the soft keys), so both directions should land on the first
-            // pinned shortcut rather than wherever focus search happens to pick.
+            // Left jumps straight to the first pinned shortcut. The soft keys
+            // either side of this button aren't keyboard-focusable, so without
+            // this, default focus search would still wander into the rail on
+            // its own (it's the only other focusable view) - landing on
+            // whichever item geometric search happens to pick, not the top one.
+            // Right has no focusable target and is swallowed so it's a no-op
+            // instead of also leaking into the rail.
             setOnKeyListener { _, keyCode, event ->
-                if (
-                    (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_DPAD_LEFT) &&
-                    event.action == KeyEvent.ACTION_DOWN
-                ) {
-                    rail.layoutManager?.findViewByPosition(0)?.requestFocus() ?: rail.requestFocus()
-                    true
-                } else {
-                    false
+                if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        rail.layoutManager?.findViewByPosition(0)?.requestFocus() ?: rail.requestFocus()
+                        true
+                    }
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> true
+                    else -> false
                 }
             }
         }
